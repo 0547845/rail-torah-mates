@@ -16,9 +16,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <UserProvider>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-background/95">
+          <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent"></div>
+          <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent"></div>
+          
           <Header />
-          <main className="flex-grow pt-24 pb-8 px-4 sm:px-6">
+          <main className="flex-grow pt-24 pb-8 px-4 sm:px-6 relative z-10">
             <div className="container mx-auto animate-fade-in">
               {children}
             </div>

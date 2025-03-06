@@ -60,16 +60,19 @@ const GoogleAuth = () => {
   };
 
   return (
-    <div className="flex justify-center">
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={handleError}
-        useOneTap
-        theme="outline"
-        shape="pill"
-        text="signin_with"
-        locale="he"
-      />
+    <div className="flex justify-center items-center">
+      <div className="transform transition-all hover:scale-105 shadow-md rounded-full overflow-hidden">
+        <GoogleLogin
+          onSuccess={handleSuccess}
+          onError={handleError}
+          useOneTap
+          theme="outline"
+          shape="pill"
+          text="signin_with"
+          locale="he"
+          width="280px"
+        />
+      </div>
     </div>
   );
 };

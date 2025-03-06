@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
 import GoogleAuth from '../components/GoogleAuth';
-import { ChevronRight, Heart, MessageCircle, User } from 'lucide-react';
+import { ChevronRight, Heart, MessageCircle, User, Sparkles, BookOpen } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -74,13 +74,18 @@ const Register = () => {
   return (
     <div className="flex justify-center min-h-[75vh]">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-primary">מצא חברותא ברכבת</h1>
+        <div className="text-center mb-8 animate-slide-down">
+          <div className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm text-primary mb-2 flex items-center justify-center mx-auto gap-2">
+            <BookOpen className="h-4 w-4" />
+            <span>למצוא חברותא ברכבת</span>
+          </div>
+          <h1 className="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">מצא חברותא ברכבת</h1>
           <p className="text-gray-600">חיבור בין לומדי תורה בדרכים</p>
         </div>
         
-        <Card className="w-full animated-gradient shadow-lg border-none transition-all duration-300 overflow-hidden">
-          <CardHeader className="bg-primary/10 pb-4">
+        <Card className="w-full animated-gradient shadow-lg border-0 transition-all duration-300 overflow-hidden rounded-3xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 z-0"></div>
+          <CardHeader className="bg-gradient-to-b from-white/80 to-white/40 backdrop-blur-sm relative z-10 pb-4">
             <CardTitle className="text-2xl flex items-center justify-center gap-2">
               <User className="h-6 w-6 text-primary" />
               הצטרף לקהילה
@@ -90,16 +95,16 @@ const Register = () => {
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="pt-6 px-6">
+          <CardContent className="pt-6 px-6 relative z-10">
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-x-4 gap-y-2">
                 <div className="flex flex-col space-y-4">
                   <div className="flex justify-center items-center mb-2">
                     <div className="flex flex-col items-center">
-                      <div className="flex gap-2 mb-1">
-                        <Heart className="text-red-500 h-5 w-5" />
+                      <div className="flex gap-2 mb-1 animate-pulse">
+                        <Heart className="text-accent h-5 w-5" />
                         <MessageCircle className="text-primary h-5 w-5" />
-                        <User className="text-green-500 h-5 w-5" />
+                        <Sparkles className="text-amber-500 h-5 w-5" />
                       </div>
                       <span className="text-sm text-gray-600">הדרך המהירה למצוא חברותא</span>
                     </div>
@@ -128,7 +133,7 @@ const Register = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={() => validateEmail(email)}
-                    className="focus-ring bg-white/60 backdrop-blur-sm"
+                    className="focus-ring bg-white/60 backdrop-blur-sm rounded-full"
                   />
                   {emailError && <p className="text-sm text-red-500">{emailError}</p>}
                 </div>
@@ -141,7 +146,7 @@ const Register = () => {
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     onBlur={() => validateNickname(nickname)}
-                    className="focus-ring bg-white/60 backdrop-blur-sm"
+                    className="focus-ring bg-white/60 backdrop-blur-sm rounded-full"
                   />
                   {nicknameError && <p className="text-sm text-red-500">{nicknameError}</p>}
                 </div>
@@ -153,25 +158,25 @@ const Register = () => {
                     placeholder="ספר מעט על עצמך ועל תחומי הלימוד המועדפים עליך"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[100px] focus-ring bg-white/60 backdrop-blur-sm"
+                    className="min-h-[100px] focus-ring bg-white/60 backdrop-blur-sm rounded-xl"
                   />
                 </div>
               </form>
             </div>
           </CardContent>
           
-          <CardFooter className="bg-primary/5 px-6 py-4">
+          <CardFooter className="bg-gradient-to-t from-white/80 to-white/40 backdrop-blur-sm px-6 py-4 relative z-10">
             <Button 
               onClick={handleSubmit} 
               disabled={isSubmitting}
-              className="w-full hover-lift focus-ring bg-primary hover:bg-primary/90 text-white group"
+              className="w-full hover-lift focus-ring rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg shadow-primary/20 group px-4 py-6 h-auto"
             >
               {isSubmitting ? (
                 'מבצע רישום...'
               ) : (
-                <span className="flex items-center justify-center">
+                <span className="flex items-center justify-center text-lg">
                   מצא חברותא 
-                  <ChevronRight className="mr-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  <ChevronRight className="mr-2 h-5 w-5 transition-transform group-hover:translate-x-[-4px]" />
                 </span>
               )}
             </Button>
