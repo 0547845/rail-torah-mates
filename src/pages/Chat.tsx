@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { SendHorizonal, ArrowRight, Clock } from 'lucide-react';
+import { SendHorizonal, ArrowRight, Clock, BookOpen, Sparkles, ScrollText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { topics } from '../data/topics';
 
 // Simulated chat message type
 interface Message {
@@ -17,6 +20,16 @@ interface Message {
   sender: 'user' | 'match';
   text: string;
   timestamp: Date;
+}
+
+// Daily content items types
+interface ContentItem {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  category: string;
+  date: string;
 }
 
 const Chat = () => {
@@ -36,8 +49,43 @@ const Chat = () => {
   const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
+  const [dailyContentTab, setDailyContentTab] = useState('halacha');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Mock data for daily content - in a real app, this would come from an API
+  const dailyContentItems: Record<string, ContentItem[]> = {
+    halacha: [
+      {
+        id: 'hal1',
+        title: 'ברכות הנהנין',
+        content: 'כל האוכל או השותה ונהנה חייב לברך לפני שיהנה. המברך על פרי העץ מברך "בורא פרי העץ", ועל פרי האדמה "בורא פרי האדמה"...',
+        source: 'שולחן ערוך אורח חיים סימן רב',
+        category: 'הלכה',
+        date: new Date().toLocaleDateString('he-IL')
+      }
+    ],
+    chasidut: [
+      {
+        id: 'chas1',
+        title: 'מידת הענווה',
+        content: 'אמר רבי חייא בר אשי אמר רב תלמיד חכם צריך שיהא בו אחד משמונה בשמינית בגאווה, כדי שלא ינהגו בו קלות ראש. אבל המידה הראויה היא מידת הענווה...',
+        source: 'ליקוטי מוהר"ן, סימן קצז',
+        category: 'חסידות',
+        date: new Date().toLocaleDateString('he-IL')
+      }
+    ],
+    parasha: [
+      {
+        id: 'par1',
+        title: 'פרשת השבוע - עיון',
+        content: 'בפרשתנו אנו לומדים על מעשה העגל וי"ג מידות הרחמים. נראה כיצד גם אחרי חטא כה חמור, השם מלמד אותנו את דרכי הסליחה והתשובה...',
+        source: 'דרשות הר"ן',
+        category: 'פרשת השבוע',
+        date: new Date().toLocaleDateString('he-IL')
+      }
+    ]
+  };
   
   // Check if user is authenticated
   useEffect(() => {
@@ -180,9 +228,75 @@ const Chat = () => {
               <CardTitle className="text-base">{match.nickname}</CardTitle>
               <Badge variant="outline" className="ml-2">{match.compatibility}% התאמה</Badge>
             </div>
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 text-red-500 mr-1" />
-              <span className="text-sm text-red-500">{formatTime(timeLeft)}</span>
+            <div className="flex items-center gap-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                    <BookOpen className="h-4 w-4" />
+                    <span className="hidden sm:inline">תוכן יומי</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+                  <SheetHeader className="text-right">
+                    <SheetTitle>תוכן יומי ללימוד</SheetTitle>
+                    <SheetDescription>
+                      חומר לימוד יומי מתחדש שניתן לשתף עם החברותא שלך
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <Tabs value={dailyContentTab} onValueChange={setDailyContentTab} className="w-full mt-6">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="halacha" className="flex items-center gap-2">
+                        <ScrollText className="h-4 w-4" />
+                        <span>הלכה</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="chasidut" className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        <span>חסידות</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="parasha" className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        <span>פרשת השבוע</span>
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    {Object.keys(dailyContentItems).map((tabKey) => (
+                      <TabsContent key={tabKey} value={tabKey} className="mt-4">
+                        <div className="space-y-4">
+                          {dailyContentItems[tabKey].map((item) => (
+                            <Card key={item.id} className="overflow-hidden card-gradient-accent hover-lift">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">{item.title}</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className="text-sm">{item.content}</p>
+                                <div className="mt-2 text-xs text-muted-foreground">{item.source}</div>
+                              </CardContent>
+                              <CardFooter className="flex justify-between pt-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setNewMessage(`הנה חומר לימוד שמצאתי בנושא ${item.title}: ${item.content.substring(0, 50)}...`);
+                                  }}
+                                  className="w-full text-xs"
+                                >
+                                  שתף בצ'אט
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))}
+                        </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </SheetContent>
+              </Sheet>
+              
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 text-red-500 mr-1" />
+                <span className="text-sm text-red-500">{formatTime(timeLeft)}</span>
+              </div>
             </div>
           </div>
         </CardHeader>

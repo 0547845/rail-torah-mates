@@ -2,22 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
-import { stations, Station } from '../data/stations';
+import { Station } from '../data/stations';
 import { trainScheduleService } from '../services/trainScheduleService';
-import { CheckCircle2, Clock, Train } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import StationSelection from './StationSelection';
+import TimeSelection from './TimeSelection';
 
 const Stations = () => {
   const navigate = useNavigate();
@@ -35,8 +27,7 @@ const Stations = () => {
     selectedTopics 
   } = useUser();
   
-  const [selectedRegion, setSelectedRegion] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [step, setStep] = useState<'departure' | 'arrival' | 'time'>('departure');
   const [isLoadingTimes, setIsLoadingTimes] = useState(false);
   const [time, setTime] = useState(departureTime || '');
   
@@ -65,7 +56,7 @@ const Stations = () => {
   // Fetch available train times when both stations are selected
   useEffect(() => {
     const fetchTrainTimes = async () => {
-      if (departureStation && arrivalStation) {
+      if (departureStation && arrivalStation && step === 'time') {
         setIsLoadingTimes(true);
         try {
           const times = await trainScheduleService.getAvailableTrainTimes(
@@ -88,13 +79,7 @@ const Stations = () => {
     };
 
     fetchTrainTimes();
-  }, [departureStation, arrivalStation, setAvailableTimes, toast]);
-  
-  const filteredStations = stations.filter((station) => {
-    const matchesRegion = selectedRegion === 'all' || station.region === selectedRegion;
-    const matchesSearch = station.name.includes(searchTerm);
-    return matchesRegion && matchesSearch;
-  });
+  }, [departureStation, arrivalStation, setAvailableTimes, toast, step]);
   
   const handleStationSelection = (station: Station, type: 'departure' | 'arrival') => {
     if (type === 'departure') {
@@ -106,6 +91,22 @@ const Stations = () => {
   
   const handleTimeSelection = (selectedTime: string) => {
     setTime(selectedTime);
+  };
+  
+  const handleNextStep = () => {
+    if (step === 'departure') {
+      setStep('arrival');
+    } else if (step === 'arrival') {
+      setStep('time');
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (step === 'time') {
+      setStep('arrival');
+    } else if (step === 'arrival') {
+      setStep('departure');
+    }
   };
   
   const handleContinue = () => {
@@ -143,207 +144,175 @@ const Stations = () => {
   return (
     <div className="flex flex-col items-center max-w-4xl mx-auto">
       <div className="text-center mb-10 animate-slide-down">
-        <h1 className="text-3xl font-bold mb-2">בחירת תחנות רכבת</h1>
+        <h1 className="text-3xl font-bold mb-2">תכנון הנסיעה</h1>
         <p className="text-gray-500">
-          בחר את תחנת המוצא והיעד שלך ואת שעת הנסיעה המשוערת
+          {step === 'departure' && 'בחר את תחנת המוצא שלך לחברותא ברכבת'}
+          {step === 'arrival' && 'בחר את תחנת היעד שלך לחברותא ברכבת'}
+          {step === 'time' && 'בחר זמן נסיעה מתאים למציאת חברותא'}
         </p>
       </div>
       
-      <Tabs defaultValue="departure" className="w-full animate-fade-in">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="departure" className="text-lg">תחנת מוצא</TabsTrigger>
-          <TabsTrigger value="arrival" className="text-lg">תחנת יעד</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="departure" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>בחר את תחנת המוצא שלך</CardTitle>
-              <CardDescription>התחנה ממנה אתה מתחיל את נסיעתך ברכבת</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
-                  <Label htmlFor="region">אזור</Label>
-                  <Select 
-                    value={selectedRegion} 
-                    onValueChange={setSelectedRegion}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="כל האזורים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל האזורים</SelectItem>
-                      <SelectItem value="north">צפון</SelectItem>
-                      <SelectItem value="center">מרכז</SelectItem>
-                      <SelectItem value="south">דרום</SelectItem>
-                      <SelectItem value="jerusalem">ירושלים</SelectItem>
-                    </SelectContent>
-                  </Select>
+      <div className="w-full space-y-4">
+        {/* Progress Steps */}
+        <div className="flex items-center justify-between mb-8 px-6">
+          <div className="w-full">
+            <div className="flex items-center justify-between relative">
+              <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 -z-10"></div>
+              
+              <div 
+                className={`flex flex-col items-center justify-center ${step === 'departure' ? 'text-primary' : 'text-gray-500'}`}
+              >
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step === 'departure' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                  1
                 </div>
-                <div className="w-full md:w-1/2">
-                  <Label htmlFor="search">חיפוש תחנה</Label>
-                  <Input
-                    id="search"
-                    placeholder="הקלד שם תחנה"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="focus-ring"
-                  />
-                </div>
+                <span className="text-xs mt-1">תחנת מוצא</span>
               </div>
               
-              <div className="max-h-64 overflow-y-auto border rounded-md p-2">
-                <ul className="space-y-2">
-                  {filteredStations.map((station) => (
-                    <li 
-                      key={station.id} 
-                      className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors hover:bg-primary/5 ${
-                        departureStation?.id === station.id ? 'bg-primary/10 border border-primary/30' : 'border'
-                      }`}
-                      onClick={() => handleStationSelection(station, 'departure')}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Train className="h-4 w-4 text-primary" />
-                        <span>{station.name}</span>
-                      </div>
-                      {departureStation?.id === station.id && (
-                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                      )}
-                    </li>
-                  ))}
-                  {filteredStations.length === 0 && (
-                    <li className="p-3 text-gray-500 text-center">לא נמצאו תחנות</li>
-                  )}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="arrival" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>בחר את תחנת היעד שלך</CardTitle>
-              <CardDescription>התחנה אליה אתה מסיים את נסיעתך ברכבת</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
-                  <Label htmlFor="region">אזור</Label>
-                  <Select 
-                    value={selectedRegion} 
-                    onValueChange={setSelectedRegion}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="כל האזורים" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">כל האזורים</SelectItem>
-                      <SelectItem value="north">צפון</SelectItem>
-                      <SelectItem value="center">מרכז</SelectItem>
-                      <SelectItem value="south">דרום</SelectItem>
-                      <SelectItem value="jerusalem">ירושלים</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div 
+                className={`flex flex-col items-center justify-center ${step === 'arrival' ? 'text-primary' : 'text-gray-500'}`}
+              >
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step === 'arrival' ? 'bg-primary text-white' : step === 'time' ? 'bg-gray-300' : 'bg-gray-100'}`}>
+                  2
                 </div>
-                <div className="w-full md:w-1/2">
-                  <Label htmlFor="search">חיפוש תחנה</Label>
-                  <Input
-                    id="search"
-                    placeholder="הקלד שם תחנה"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="focus-ring"
-                  />
-                </div>
+                <span className="text-xs mt-1">תחנת יעד</span>
               </div>
               
-              <div className="max-h-64 overflow-y-auto border rounded-md p-2">
-                <ul className="space-y-2">
-                  {filteredStations.map((station) => (
-                    <li 
-                      key={station.id} 
-                      className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors hover:bg-primary/5 ${
-                        arrivalStation?.id === station.id ? 'bg-primary/10 border border-primary/30' : 'border'
-                      }`}
-                      onClick={() => handleStationSelection(station, 'arrival')}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Train className="h-4 w-4 text-primary" />
-                        <span>{station.name}</span>
-                      </div>
-                      {arrivalStation?.id === station.id && (
-                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                      )}
-                    </li>
-                  ))}
-                  {filteredStations.length === 0 && (
-                    <li className="p-3 text-gray-500 text-center">לא נמצאו תחנות</li>
-                  )}
-                </ul>
+              <div 
+                className={`flex flex-col items-center justify-center ${step === 'time' ? 'text-primary' : 'text-gray-500'}`}
+              >
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${step === 'time' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+                  3
+                </div>
+                <span className="text-xs mt-1">זמן נסיעה</span>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </div>
+        </div>
       
-      <Card className="w-full mt-8 animate-fade-in">
-        <CardHeader>
-          <CardTitle>בחר שעת נסיעה</CardTitle>
-          <CardDescription>
-            {departureStation && arrivalStation ? 
-              `זמני רכבת זמינים מ${departureStation.name} ל${arrivalStation.name}` : 
-              'יש לבחור תחנות מוצא ויעד תחילה'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingTimes ? (
-            <div className="py-4 text-center">
-              <p className="text-gray-500">טוען לוח זמנים...</p>
-            </div>
-          ) : availableTimes.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-              {availableTimes.map((trainTime) => (
-                <div
-                  key={trainTime}
-                  onClick={() => handleTimeSelection(trainTime)}
-                  className={`flex items-center justify-center p-3 rounded-md border cursor-pointer transition-all hover:bg-primary/5 ${
-                    time === trainTime ? 'bg-primary/10 border-primary/30' : ''
-                  }`}
-                >
-                  <Clock className="h-4 w-4 mr-2 text-primary" />
-                  <span>{trainTime}</span>
-                </div>
-              ))}
-            </div>
-          ) : departureStation && arrivalStation ? (
-            <div className="py-4 text-center">
-              <p className="text-gray-500">לא נמצאו זמני רכבת זמינים בין התחנות שנבחרו</p>
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-gray-500">יש לבחור תחנת מוצא ותחנת יעד לצפייה בלוח הזמנים</p>
-            </div>
-          )}
+        {/* Step Content */}
+        {step === 'departure' && (
+          <StationSelection 
+            type="departure"
+            onStationSelected={(station) => handleStationSelection(station, 'departure')}
+            selectedStation={departureStation}
+            showNextStep={handleNextStep}
+          />
+        )}
+        
+        {step === 'arrival' && (
+          <StationSelection 
+            type="arrival"
+            onStationSelected={(station) => handleStationSelection(station, 'arrival')}
+            selectedStation={arrivalStation}
+            showNextStep={handleNextStep}
+          />
+        )}
+        
+        {step === 'time' && departureStation && arrivalStation && (
+          <TimeSelection
+            availableTimes={availableTimes}
+            selectedTime={time}
+            onTimeSelected={handleTimeSelection}
+            isLoading={isLoadingTimes}
+            departureStation={departureStation}
+            arrivalStation={arrivalStation}
+          />
+        )}
+      </div>
+      
+      {/* Navigation Buttons */}
+      <Card className="w-full mt-8 border-none bg-transparent shadow-none">
+        <CardContent className="p-0">
+          <div className="flex justify-between pt-4">
+            {step !== 'departure' ? (
+              <Button 
+                variant="outline" 
+                onClick={handlePreviousStep}
+                className="focus-ring"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                חזור
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/topics')}
+                className="focus-ring"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                חזור לנושאים
+              </Button>
+            )}
+            
+            {step === 'departure' && (
+              <Button 
+                onClick={handleNextStep}
+                disabled={!departureStation}
+                className="hover-lift focus-ring"
+              >
+                המשך
+                <ArrowLeft className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+            
+            {step === 'arrival' && (
+              <Button 
+                onClick={handleNextStep}
+                disabled={!arrivalStation}
+                className="hover-lift focus-ring"
+              >
+                בחר זמן
+                <ArrowLeft className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+            
+            {step === 'time' && (
+              <Button 
+                onClick={handleContinue}
+                disabled={!time}
+                className="hover-lift focus-ring"
+              >
+                מצא חברותא
+                <ArrowLeft className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate('/topics')}
-            className="focus-ring"
-          >
-            חזור
-          </Button>
-          <Button 
-            onClick={handleContinue}
-            className="hover-lift focus-ring"
-            disabled={!departureStation || !arrivalStation || !time}
-          >
-            מצא חברותא
-          </Button>
-        </CardFooter>
       </Card>
+      
+      {/* Station Summary */}
+      {(departureStation || arrivalStation) && (
+        <Card className="w-full mt-4 bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              {departureStation && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500">תחנת מוצא</span>
+                  <span className="font-semibold">{departureStation.name}</span>
+                </div>
+              )}
+              
+              {departureStation && arrivalStation && (
+                <div className="hidden sm:block">→</div>
+              )}
+              
+              {arrivalStation && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500">תחנת יעד</span>
+                  <span className="font-semibold">{arrivalStation.name}</span>
+                </div>
+              )}
+              
+              {time && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-500">זמן יציאה</span>
+                  <span className="font-semibold">{time}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

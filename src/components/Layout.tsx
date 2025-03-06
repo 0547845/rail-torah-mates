@@ -10,22 +10,27 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  // Google OAuth client ID - in a real app this would be in an environment variable
-  const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID";
+  // Google OAuth client ID - in a real app this would come from environment variables
+  // For demo purposes, using a placeholder value that would need to be replaced with a real client ID
+  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
   
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <UserProvider>
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-background/95">
-          {/* Background decorative elements */}
+          {/* Background decorative elements with Torah-themed patterns */}
           <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent"></div>
           <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-accent/5 via-transparent to-transparent"></div>
           
-          {/* Light patterns */}
+          {/* Light patterns representing the light of Torah */}
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
             <div className="absolute top-0 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 -left-20 w-60 h-60 bg-amber-500/5 rounded-full blur-3xl"></div>
             <div className="absolute top-1/3 left-1/4 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
+            
+            {/* Additional Torah-themed light elements */}
+            <div className="absolute top-1/2 right-1/3 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl opacity-30"></div>
+            <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl"></div>
           </div>
           
           <Header />
