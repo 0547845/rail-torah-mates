@@ -9,6 +9,8 @@ interface User {
   nickname?: string;
   description?: string;
   isVerified?: boolean;
+  googleId?: string;
+  profilePicture?: string;
 }
 
 interface UserContextType {
@@ -22,6 +24,8 @@ interface UserContextType {
   setArrivalStation: React.Dispatch<React.SetStateAction<Station | null>>;
   departureTime: string | null;
   setDepartureTime: React.Dispatch<React.SetStateAction<string | null>>;
+  availableTimes: string[];
+  setAvailableTimes: React.Dispatch<React.SetStateAction<string[]>>;
   clearUserData: () => void;
   isAuthenticated: boolean;
 }
@@ -34,6 +38,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [departureStation, setDepartureStation] = useState<Station | null>(null);
   const [arrivalStation, setArrivalStation] = useState<Station | null>(null);
   const [departureTime, setDepartureTime] = useState<string | null>(null);
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Load user data from localStorage on initial render
@@ -67,6 +72,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDepartureStation(null);
     setArrivalStation(null);
     setDepartureTime(null);
+    setAvailableTimes([]);
     localStorage.removeItem('user');
   };
 
@@ -82,6 +88,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setArrivalStation,
       departureTime,
       setDepartureTime,
+      availableTimes,
+      setAvailableTimes,
       clearUserData,
       isAuthenticated
     }}>

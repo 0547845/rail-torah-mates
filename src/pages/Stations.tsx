@@ -16,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
 import { stations, Station } from '../data/stations';
-import { CheckCircle2, Train } from 'lucide-react';
+import { trainScheduleService } from '../services/trainScheduleService';
+import { CheckCircle2, Clock, Train } from 'lucide-react';
 
 const Stations = () => {
   const navigate = useNavigate();
@@ -28,13 +29,16 @@ const Stations = () => {
     setArrivalStation, 
     departureTime, 
     setDepartureTime,
+    availableTimes,
+    setAvailableTimes,
     isAuthenticated, 
     selectedTopics 
   } = useUser();
   
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [time, setTime] = useState(departureTime || '08:00');
+  const [isLoadingTimes, setIsLoadingTimes] = useState(false);
+  const [time, setTime] = useState(departureTime || '');
   
   // Check if user is authenticated and has selected topics
   useEffect(() => {
@@ -58,6 +62,34 @@ const Stations = () => {
     }
   }, [isAuthenticated, selectedTopics, navigate, toast]);
   
+  // Fetch available train times when both stations are selected
+  useEffect(() => {
+    const fetchTrainTimes = async () => {
+      if (departureStation && arrivalStation) {
+        setIsLoadingTimes(true);
+        try {
+          const times = await trainScheduleService.getAvailableTrainTimes(
+            departureStation,
+            arrivalStation
+          );
+          setAvailableTimes(times);
+          setTime(''); // Reset selected time when stations change
+        } catch (error) {
+          console.error("Error fetching train times:", error);
+          toast({
+            title: "שגיאה בטעינת לוח זמנים",
+            description: "לא ניתן לטעון את לוח הזמנים כעת. נסה שנית מאוחר יותר.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingTimes(false);
+        }
+      }
+    };
+
+    fetchTrainTimes();
+  }, [departureStation, arrivalStation, setAvailableTimes, toast]);
+  
   const filteredStations = stations.filter((station) => {
     const matchesRegion = selectedRegion === 'all' || station.region === selectedRegion;
     const matchesSearch = station.name.includes(searchTerm);
@@ -72,8 +104,8 @@ const Stations = () => {
     }
   };
   
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTime(e.target.value);
+  const handleTimeSelection = (selectedTime: string) => {
+    setTime(selectedTime);
   };
   
   const handleContinue = () => {
@@ -90,6 +122,15 @@ const Stations = () => {
       toast({
         title: "תחנות זהות",
         description: "תחנת המוצא והיעד לא יכולות להיות זהות",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!time) {
+      toast({
+        title: "בחר שעת נסיעה",
+        description: "יש לבחור שעת נסיעה",
         variant: "destructive",
       });
       return;
@@ -249,20 +290,42 @@ const Stations = () => {
       
       <Card className="w-full mt-8 animate-fade-in">
         <CardHeader>
-          <CardTitle>שעת נסיעה משוערת</CardTitle>
-          <CardDescription>בחר את השעה שבה אתה מתכנן לנסוע</CardDescription>
+          <CardTitle>בחר שעת נסיעה</CardTitle>
+          <CardDescription>
+            {departureStation && arrivalStation ? 
+              `זמני רכבת זמינים מ${departureStation.name} ל${arrivalStation.name}` : 
+              'יש לבחור תחנות מוצא ויעד תחילה'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full sm:w-1/2">
-            <Label htmlFor="time">שעת יציאה</Label>
-            <Input
-              id="time"
-              type="time"
-              value={time}
-              onChange={handleTimeChange}
-              className="focus-ring"
-            />
-          </div>
+          {isLoadingTimes ? (
+            <div className="py-4 text-center">
+              <p className="text-gray-500">טוען לוח זמנים...</p>
+            </div>
+          ) : availableTimes.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+              {availableTimes.map((trainTime) => (
+                <div
+                  key={trainTime}
+                  onClick={() => handleTimeSelection(trainTime)}
+                  className={`flex items-center justify-center p-3 rounded-md border cursor-pointer transition-all hover:bg-primary/5 ${
+                    time === trainTime ? 'bg-primary/10 border-primary/30' : ''
+                  }`}
+                >
+                  <Clock className="h-4 w-4 mr-2 text-primary" />
+                  <span>{trainTime}</span>
+                </div>
+              ))}
+            </div>
+          ) : departureStation && arrivalStation ? (
+            <div className="py-4 text-center">
+              <p className="text-gray-500">לא נמצאו זמני רכבת זמינים בין התחנות שנבחרו</p>
+            </div>
+          ) : (
+            <div className="py-4 text-center">
+              <p className="text-gray-500">יש לבחור תחנת מוצא ותחנת יעד לצפייה בלוח הזמנים</p>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button 
@@ -275,6 +338,7 @@ const Stations = () => {
           <Button 
             onClick={handleContinue}
             className="hover-lift focus-ring"
+            disabled={!departureStation || !arrivalStation || !time}
           >
             מצא חברותא
           </Button>
