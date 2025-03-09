@@ -4,14 +4,14 @@ import Header from './Header';
 import Footer from './Footer';
 import { UserProvider } from '../contexts/UserContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { Toaster } from '@/components/ui/toaster';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  // Google OAuth client ID - in a real app this would come from environment variables
-  // For demo purposes, using a placeholder value that would need to be replaced with a real client ID
+  // Google OAuth client ID from environment variables 
   const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
   
   return (
@@ -27,8 +27,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="absolute top-0 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 -left-20 w-60 h-60 bg-amber-500/5 rounded-full blur-3xl"></div>
             <div className="absolute top-1/3 left-1/4 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
-            
-            {/* Additional Torah-themed light elements */}
             <div className="absolute top-1/2 right-1/3 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl opacity-30"></div>
             <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl"></div>
           </div>
@@ -40,6 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </main>
           <Footer />
+          <Toaster />
         </div>
       </UserProvider>
     </GoogleOAuthProvider>
