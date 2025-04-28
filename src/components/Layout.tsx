@@ -11,8 +11,8 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  // Google OAuth client ID from environment variables 
-  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+  // Google OAuth client ID using Vite's import.meta.env instead of process.env
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
   
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
