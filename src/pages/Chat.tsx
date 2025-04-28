@@ -12,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { topics } from '../data/topics';
+import { useDailyContent } from '../hooks/useDailyContent';
+import ContentSharingDialog from '../components/ContentSharingDialog';
 
 // Simulated chat message type
 interface Message {
@@ -22,21 +23,12 @@ interface Message {
   timestamp: Date;
 }
 
-// Daily content items types
-interface ContentItem {
-  id: string;
-  title: string;
-  content: string;
-  source: string;
-  category: string;
-  date: string;
-}
-
 const Chat = () => {
   const navigate = useNavigate();
   const { chatId } = useParams<{ chatId: string }>();
   const { toast } = useToast();
   const { user, isAuthenticated } = useUser();
+  const { halachaItems, chasidutItems, parashaItems, isLoading: isLoadingContent } = useDailyContent();
   
   const [match, setMatch] = useState({
     id: '',
@@ -52,40 +44,6 @@ const Chat = () => {
   const [dailyContentTab, setDailyContentTab] = useState('halacha');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Mock data for daily content - in a real app, this would come from an API
-  const dailyContentItems: Record<string, ContentItem[]> = {
-    halacha: [
-      {
-        id: 'hal1',
-        title: 'ברכות הנהנין',
-        content: 'כל האוכל או השותה ונהנה חייב לברך לפני שיהנה. המברך על פרי העץ מברך "בורא פרי העץ", ועל פרי האדמה "בורא פרי האדמה"...',
-        source: 'שולחן ערוך אורח חיים סימן רב',
-        category: 'הלכה',
-        date: new Date().toLocaleDateString('he-IL')
-      }
-    ],
-    chasidut: [
-      {
-        id: 'chas1',
-        title: 'מידת הענווה',
-        content: 'אמר רבי חייא בר אשי אמר רב תלמיד חכם צריך שיהא בו אחד משמונה בשמינית בגאווה, כדי שלא ינהגו בו קלות ראש. אבל המידה הראויה היא מידת הענווה...',
-        source: 'ליקוטי מוהר"ן, סימן קצז',
-        category: 'חסידות',
-        date: new Date().toLocaleDateString('he-IL')
-      }
-    ],
-    parasha: [
-      {
-        id: 'par1',
-        title: 'פרשת השבוע - עיון',
-        content: 'בפרשתנו אנו לומדים על מעשה העגל וי"ג מידות הרחמים. נראה כיצד גם אחרי חטא כה חמור, השם מלמד אותנו את דרכי הסליחה והתשובה...',
-        source: 'דרשות הר"ן',
-        category: 'פרשת השבוע',
-        date: new Date().toLocaleDateString('he-IL')
-      }
-    ]
-  };
   
   // Check if user is authenticated
   useEffect(() => {
@@ -167,6 +125,7 @@ const Chat = () => {
         'האם אתה מכיר את הפירוש של הרמב"ם על הסוגיה?',
         'בסדר גמור, נפגש ברכבת. מחכה ללמוד יחד.',
         'יש לי רעיון לדיון מעניין בנושא, אשמח לשתף כשניפגש.',
+        'ראיתי מאמר מעניין בנושא הזה לאחרונה, אביא אותו איתי.',
       ];
       
       const replyMsg: Message = {
@@ -184,6 +143,12 @@ const Chat = () => {
     if (e.key === 'Enter') {
       sendMessage();
     }
+  };
+  
+  const shareContent = (message: string) => {
+    setNewMessage(message);
+    // Optional: Send automatically
+    // setTimeout(sendMessage, 100);
   };
   
   const submitRating = () => {
@@ -260,36 +225,142 @@ const Chat = () => {
                       </TabsTrigger>
                     </TabsList>
                     
-                    {Object.keys(dailyContentItems).map((tabKey) => (
-                      <TabsContent key={tabKey} value={tabKey} className="mt-4">
-                        <div className="space-y-4">
-                          {dailyContentItems[tabKey].map((item) => (
+                    <TabsContent value="halacha" className="mt-4">
+                      <div className="space-y-4">
+                        {isLoadingContent ? (
+                          <p>טוען תוכן...</p>
+                        ) : halachaItems.length > 0 ? (
+                          halachaItems.map((item) => (
                             <Card key={item.id} className="overflow-hidden card-gradient-accent hover-lift">
                               <CardHeader className="pb-2">
                                 <CardTitle className="text-lg">{item.title}</CardTitle>
                               </CardHeader>
                               <CardContent>
-                                <p className="text-sm">{item.content}</p>
-                                <div className="mt-2 text-xs text-muted-foreground">{item.source}</div>
+                                <p className="text-sm">
+                                  {item.content.length > 150 
+                                    ? `${item.content.substring(0, 150)}...` 
+                                    : item.content}
+                                </p>
+                                {item.source && <div className="mt-2 text-xs text-muted-foreground">{item.source}</div>}
                               </CardContent>
                               <CardFooter className="flex justify-between pt-2">
+                                <ContentSharingDialog 
+                                  contentItem={item}
+                                  onShare={(message) => shareContent(message)}
+                                  matchId={match.id}
+                                  compact
+                                />
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
-                                  onClick={() => {
-                                    setNewMessage(`הנה חומר לימוד שמצאתי בנושא ${item.title}: ${item.content.substring(0, 50)}...`);
-                                  }}
-                                  className="w-full text-xs"
+                                  onClick={() => navigate(`/content/${item.id}`)}
+                                  className="text-xs"
                                 >
-                                  שתף בצ'אט
+                                  פתח
                                 </Button>
                               </CardFooter>
                             </Card>
-                          ))}
-                        </div>
-                      </TabsContent>
-                    ))}
+                          ))
+                        ) : (
+                          <p>אין תוכן זמין כרגע</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="chasidut" className="mt-4">
+                      <div className="space-y-4">
+                        {isLoadingContent ? (
+                          <p>טוען תוכן...</p>
+                        ) : chasidutItems.length > 0 ? (
+                          chasidutItems.map((item) => (
+                            <Card key={item.id} className="overflow-hidden card-gradient-accent hover-lift">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">{item.title}</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className="text-sm">
+                                  {item.content.length > 150 
+                                    ? `${item.content.substring(0, 150)}...` 
+                                    : item.content}
+                                </p>
+                                {item.source && <div className="mt-2 text-xs text-muted-foreground">{item.source}</div>}
+                              </CardContent>
+                              <CardFooter className="flex justify-between pt-2">
+                                <ContentSharingDialog 
+                                  contentItem={item}
+                                  onShare={(message) => shareContent(message)}
+                                  matchId={match.id}
+                                  compact
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/content/${item.id}`)}
+                                  className="text-xs"
+                                >
+                                  פתח
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))
+                        ) : (
+                          <p>אין תוכן זמין כרגע</p>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="parasha" className="mt-4">
+                      <div className="space-y-4">
+                        {isLoadingContent ? (
+                          <p>טוען תוכן...</p>
+                        ) : parashaItems.length > 0 ? (
+                          parashaItems.map((item) => (
+                            <Card key={item.id} className="overflow-hidden card-gradient-accent hover-lift">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-lg">{item.title}</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className="text-sm">
+                                  {item.content.length > 150 
+                                    ? `${item.content.substring(0, 150)}...` 
+                                    : item.content}
+                                </p>
+                                {item.source && <div className="mt-2 text-xs text-muted-foreground">{item.source}</div>}
+                              </CardContent>
+                              <CardFooter className="flex justify-between pt-2">
+                                <ContentSharingDialog 
+                                  contentItem={item}
+                                  onShare={(message) => shareContent(message)}
+                                  matchId={match.id}
+                                  compact
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/content/${item.id}`)}
+                                  className="text-xs"
+                                >
+                                  פתח
+                                </Button>
+                              </CardFooter>
+                            </Card>
+                          ))
+                        ) : (
+                          <p>אין תוכן זמין כרגע</p>
+                        )}
+                      </div>
+                    </TabsContent>
                   </Tabs>
+                  
+                  <div className="mt-8 text-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/content')}
+                      className="w-full"
+                    >
+                      צפה בכל התכנים
+                    </Button>
+                  </div>
                 </SheetContent>
               </Sheet>
               

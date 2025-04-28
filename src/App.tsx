@@ -12,9 +12,17 @@ import Stations from "./pages/Stations";
 import Matches from "./pages/Matches";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
+import LearningContent from "./pages/LearningContent";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -31,6 +39,8 @@ const App = () => (
             <Route path="/matches" element={<Matches />} />
             <Route path="/chat/:chatId" element={<Chat />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/content" element={<LearningContent />} />
+            <Route path="/content/:id" element={<LearningContent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

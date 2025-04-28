@@ -29,6 +29,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="absolute top-1/3 left-1/4 w-40 h-40 bg-accent/5 rounded-full blur-3xl"></div>
             <div className="absolute top-1/2 right-1/3 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl opacity-30"></div>
             <div className="absolute bottom-1/3 right-1/4 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl"></div>
+            
+            {/* Additional decorative elements for Jewish themes */}
+            <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-10 right-10 w-48 h-48 bg-yellow-500/5 rounded-full blur-3xl"></div>
+            
+            {/* Star of David pattern (subtle) */}
+            <div className="absolute top-[40%] left-[40%] w-24 h-24 bg-blue-500/3 rounded-full blur-2xl"></div>
+            <div className="absolute top-[40%] left-[40%] w-24 h-24 bg-blue-500/3 rotate-45 rounded-full blur-2xl"></div>
+            
+            {/* Menorah pattern (subtle) */}
+            <div className="absolute bottom-1/4 right-1/2 w-2 h-10 bg-amber-500/3 blur-xl"></div>
+            <div className="absolute bottom-1/4 right-[calc(50%-10px)] w-2 h-8 bg-amber-500/3 blur-xl"></div>
+            <div className="absolute bottom-1/4 right-[calc(50%+10px)] w-2 h-8 bg-amber-500/3 blur-xl"></div>
+            <div className="absolute bottom-1/4 right-[calc(50%-20px)] w-2 h-7 bg-amber-500/3 blur-xl"></div>
+            <div className="absolute bottom-1/4 right-[calc(50%+20px)] w-2 h-7 bg-amber-500/3 blur-xl"></div>
           </div>
           
           <Header />
