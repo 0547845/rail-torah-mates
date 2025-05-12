@@ -15,11 +15,13 @@ import Profile from "./pages/Profile";
 import LearningContent from "./pages/LearningContent";
 import NotFound from "./pages/NotFound";
 
+// Create a React Query client with good defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });

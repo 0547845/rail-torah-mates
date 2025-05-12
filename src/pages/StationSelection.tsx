@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
 import { stations, Station } from '../data/stations';
 import { trainScheduleService } from '../services/trainScheduleService';
-import { CheckCircle2, Train } from 'lucide-react';
+import { CheckCircle2, Train, MapPin, Locate } from 'lucide-react';
 
 interface StationSelectionProps {
   type: 'departure' | 'arrival';
@@ -32,8 +32,10 @@ const StationSelection: React.FC<StationSelectionProps> = ({
   showNextStep
 }) => {
   const { toast } = useToast();
+  const { nearbyStation, updateUserLocation, locationError } = useUser();
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
   
   const title = type === 'departure' ? 'בחר את תחנת המוצא שלך' : 'בחר את תחנת היעד שלך';
   const description = type === 'departure' 
@@ -45,6 +47,19 @@ const StationSelection: React.FC<StationSelectionProps> = ({
     const matchesSearch = station.name.includes(searchTerm);
     return matchesRegion && matchesSearch;
   });
+
+  // Highlight nearby station if available and this is departure selection
+  useEffect(() => {
+    if (type === 'departure' && nearbyStation && !selectedStation) {
+      // Auto-scroll to the station in the list
+      setTimeout(() => {
+        const stationElement = document.getElementById(`station-${nearbyStation.id}`);
+        if (stationElement) {
+          stationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [nearbyStation, selectedStation, type]);
   
   const handleStationClick = (station: Station) => {
     onStationSelected(station);
@@ -62,6 +77,47 @@ const StationSelection: React.FC<StationSelectionProps> = ({
       }, 500);
     }
   };
+
+  const findNearbyStation = async () => {
+    setIsLocating(true);
+    await updateUserLocation();
+    setIsLocating(false);
+    
+    if (locationError) {
+      toast({
+        title: "שגיאה באיתור מיקום",
+        description: locationError,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (nearbyStation) {
+      toast({
+        title: "נמצאה תחנה קרובה",
+        description: nearbyStation.name,
+      });
+      
+      // Auto-scroll to the station in the list
+      setTimeout(() => {
+        const stationElement = document.getElementById(`station-${nearbyStation.id}`);
+        if (stationElement) {
+          stationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+      
+      // If this is departure selection, select the nearby station
+      if (type === 'departure') {
+        onStationSelected(nearbyStation);
+      }
+    } else {
+      toast({
+        title: "לא נמצאה תחנה קרובה",
+        description: "נסה לבחור תחנה מהרשימה",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Card className="w-full animate-fade-in">
@@ -71,7 +127,7 @@ const StationSelection: React.FC<StationSelectionProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-1/3">
             <Label htmlFor="region">אזור</Label>
             <Select 
               value={selectedRegion} 
@@ -89,15 +145,38 @@ const StationSelection: React.FC<StationSelectionProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div className="w-full md:w-1/2">
+          <div className="w-full md:w-2/3">
             <Label htmlFor="search">חיפוש תחנה</Label>
-            <Input
-              id="search"
-              placeholder="הקלד שם תחנה"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="focus-ring"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="search"
+                placeholder="הקלד שם תחנה"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="focus-ring"
+              />
+              {type === 'departure' && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={findNearbyStation}
+                  disabled={isLocating}
+                  className="flex items-center gap-1"
+                >
+                  {isLocating ? (
+                    <>
+                      <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                      <span>מאתר...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Locate className="h-4 w-4" />
+                      <span>תחנה קרובה</span>
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -105,15 +184,26 @@ const StationSelection: React.FC<StationSelectionProps> = ({
           <ul className="space-y-2">
             {filteredStations.map((station) => (
               <li 
-                key={station.id} 
+                key={station.id}
+                id={`station-${station.id}`}
                 className={`flex items-center justify-between p-3 rounded-md cursor-pointer transition-colors hover:bg-primary/5 ${
-                  selectedStation?.id === station.id ? 'bg-primary/10 border border-primary/30' : 'border'
+                  selectedStation?.id === station.id ? 'bg-primary/10 border border-primary/30' : 
+                  (nearbyStation?.id === station.id && type === 'departure') ? 'bg-blue-50 border border-blue-200' : 
+                  'border'
                 }`}
                 onClick={() => handleStationClick(station)}
               >
                 <div className="flex items-center gap-2">
-                  <Train className="h-4 w-4 text-primary" />
+                  {(nearbyStation?.id === station.id && type === 'departure') ? (
+                    <MapPin className="h-4 w-4 text-blue-500" />
+                  ) : (
+                    <Train className="h-4 w-4 text-primary" />
+                  )}
                   <span>{station.name}</span>
+                  
+                  {(nearbyStation?.id === station.id && type === 'departure') && (
+                    <span className="text-xs text-blue-600 ml-1">קרוב אליך</span>
+                  )}
                 </div>
                 {selectedStation?.id === station.id && (
                   <CheckCircle2 className="h-5 w-5 text-primary" />

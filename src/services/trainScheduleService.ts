@@ -16,7 +16,7 @@ interface TrainSchedule {
 }
 
 // This service provides train schedule data
-// In a production environment, this would connect to Israel Railways API
+// Uses the Israel Railways API if available, falls back to mock data
 export const trainScheduleService = {
   // Get available train times between two stations
   getAvailableTrainTimes: async (
@@ -27,18 +27,30 @@ export const trainScheduleService = {
     console.log(`Fetching train times from ${departureStation.name} to ${arrivalStation.name}`);
     
     try {
-      // In a production environment, this would call Israel Railways API
-      // For now, simulate a response with realistic mock data
-
-      // Optional - future implementation with actual API:
-      // const response = await axios.get('https://www.rail.co.il/apiinfo/api/v1/timetable', {
-      //   params: {
-      //     fromStation: departureStation.id,
-      //     toStation: arrivalStation.id,
-      //     date: date.toISOString().split('T')[0],
-      //   }
-      // });
-      // return response.data.departures.map((dep: any) => dep.departureTime);
+      // Try to use Israel Railways API if available
+      // Note: This is a proxy endpoint that would need to be implemented on a server
+      // as Israel Railways doesn't provide direct CORS-enabled API access
+      const apiUrl = import.meta.env.VITE_RAIL_API_URL;
+      
+      if (apiUrl) {
+        try {
+          const response = await axios.get(`${apiUrl}/api/schedules`, {
+            params: {
+              from: departureStation.id,
+              to: arrivalStation.id,
+              date: date.toISOString().split('T')[0]
+            },
+            timeout: 5000 // Set a timeout in case the API is slow
+          });
+          
+          if (response.data && response.data.departures) {
+            return response.data.departures.map((dep: any) => dep.departureTime);
+          }
+        } catch (apiError) {
+          console.warn("Could not connect to Israel Railways API, falling back to mock data:", apiError);
+          // Fall through to use the mock data
+        }
+      }
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -98,6 +110,30 @@ export const trainScheduleService = {
     console.log(`Fetching train schedule for ${departureTime} from ${departureStation.name} to ${arrivalStation.name}`);
     
     try {
+      // Try to use Israel Railways API if available
+      const apiUrl = import.meta.env.VITE_RAIL_API_URL;
+      
+      if (apiUrl) {
+        try {
+          const response = await axios.get(`${apiUrl}/api/train`, {
+            params: {
+              from: departureStation.id,
+              to: arrivalStation.id,
+              time: departureTime,
+              date: date.toISOString().split('T')[0]
+            },
+            timeout: 5000
+          });
+          
+          if (response.data && response.data.schedule) {
+            return response.data.schedule;
+          }
+        } catch (apiError) {
+          console.warn("Could not connect to Israel Railways API for schedule, falling back to mock data:", apiError);
+          // Fall through to use the mock data
+        }
+      }
+      
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 600));
       
@@ -197,4 +233,3 @@ export const trainScheduleService = {
     return allTimes.slice(start, end);
   }
 };
-

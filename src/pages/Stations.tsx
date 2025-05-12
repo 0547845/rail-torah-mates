@@ -2,14 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '../contexts/UserContext';
 import { Station } from '../data/stations';
 import { trainScheduleService } from '../services/trainScheduleService';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
 import StationSelection from './StationSelection';
 import TimeSelection from './TimeSelection';
+import NearbyStationAlert from '../components/NearbyStationAlert';
 
 const Stations = () => {
   const navigate = useNavigate();
@@ -24,7 +25,10 @@ const Stations = () => {
     availableTimes,
     setAvailableTimes,
     isAuthenticated, 
-    selectedTopics 
+    selectedTopics,
+    nearbyStation,
+    updateUserLocation,
+    locationError
   } = useUser();
   
   const [step, setStep] = useState<'departure' | 'arrival' | 'time'>('departure');
@@ -51,7 +55,10 @@ const Stations = () => {
       });
       navigate('/topics');
     }
-  }, [isAuthenticated, selectedTopics, navigate, toast]);
+    
+    // Try to update user location when component mounts
+    updateUserLocation();
+  }, [isAuthenticated, selectedTopics, navigate, toast, updateUserLocation]);
   
   // Fetch available train times when both stations are selected
   useEffect(() => {
@@ -143,7 +150,7 @@ const Stations = () => {
 
   return (
     <div className="flex flex-col items-center max-w-4xl mx-auto">
-      <div className="text-center mb-10 animate-slide-down">
+      <div className="text-center mb-6 animate-slide-down">
         <h1 className="text-3xl font-bold mb-2">תכנון הנסיעה</h1>
         <p className="text-gray-500">
           {step === 'departure' && 'בחר את תחנת המוצא שלך לחברותא ברכבת'}
@@ -151,6 +158,13 @@ const Stations = () => {
           {step === 'time' && 'בחר זמן נסיעה מתאים למציאת חברותא'}
         </p>
       </div>
+      
+      {/* Show nearby station alert if available and on departure step */}
+      {step === 'departure' && !departureStation && (
+        <div className="w-full mb-4">
+          <NearbyStationAlert />
+        </div>
+      )}
       
       <div className="w-full space-y-4">
         {/* Progress Steps */}
@@ -248,7 +262,7 @@ const Stations = () => {
               <Button 
                 onClick={handleNextStep}
                 disabled={!departureStation}
-                className="hover-lift focus-ring"
+                className="hover-lift focus-ring bg-primary hover:bg-primary/90"
               >
                 המשך
                 <ArrowLeft className="ml-2 h-4 w-4" />
@@ -259,7 +273,7 @@ const Stations = () => {
               <Button 
                 onClick={handleNextStep}
                 disabled={!arrivalStation}
-                className="hover-lift focus-ring"
+                className="hover-lift focus-ring bg-primary hover:bg-primary/90"
               >
                 בחר זמן
                 <ArrowLeft className="ml-2 h-4 w-4" />
@@ -270,7 +284,7 @@ const Stations = () => {
               <Button 
                 onClick={handleContinue}
                 disabled={!time}
-                className="hover-lift focus-ring"
+                className="hover-lift focus-ring bg-primary hover:bg-primary/90"
               >
                 מצא חברותא
                 <ArrowLeft className="ml-2 h-4 w-4" />
@@ -288,7 +302,15 @@ const Stations = () => {
               {departureStation && (
                 <div className="flex flex-col">
                   <span className="text-xs text-gray-500">תחנת מוצא</span>
-                  <span className="font-semibold">{departureStation.name}</span>
+                  <div className="flex items-center">
+                    <span className="font-semibold">{departureStation.name}</span>
+                    {nearbyStation?.id === departureStation.id && (
+                      <span className="inline-flex items-center ml-1">
+                        <MapPin className="h-3 w-3 text-blue-500" />
+                        <span className="text-xs text-blue-600">קרוב אליך</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
               
